@@ -1,0 +1,34 @@
+{
+  "name": "org.asyar.emoji",
+  "version": "1.0.0",
+  "description": "Cross-platform emoji, symbol, and kaomoji picker with AI-aware search.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "publish": "asyar publish",
+    "link": "asyar link",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "package": "npm run build && zip -r extension.zip dist manifest.json",
+    "gen:data": "node scripts/generate-data.mjs"
+  },
+  "dependencies": {
+    "svelte": "^5.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@types/rollup-plugin-css-only": "^3.1.2",
+    "@vitest/coverage-v8": "^2.1.0",
+    "asyar-sdk": "workspace:*",
+    "emojilib": "^4.0.3",
+    "rollup-plugin-css-only": "^4.5.2",
+    "typescript": "^5.0.0",
+    "unicode-emoji-json": "^0.9.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-arm64-msvc": "*"
+  }
+}

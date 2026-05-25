@@ -1,0 +1,62 @@
+{
+  "id": "org.asyar.emoji",
+  "name": "Emoji",
+  "version": "1.0.0",
+  "type": "extension",
+  "description": "Cross-platform emoji, symbol, and kaomoji picker with AI-aware search.",
+  "author": "Asyar",
+  "icon": "😀",
+  "searchable": true,
+  "asyarSdk": "^3.0.0",
+  "permissions": [
+    "tools:register",
+    "clipboard:write",
+    "snippets:contribute"
+  ],
+  "commands": [
+    {
+      "id": "open",
+      "name": "Emoji & Symbols",
+      "description": "Pick and insert an emoji, symbol, or kaomoji.",
+      "icon": "😀",
+      "mode": "view",
+      "component": "DefaultView",
+      "actions": []
+    },
+    {
+      "id": "settings",
+      "name": "Emoji Settings",
+      "description": "Configure emoji search, shortcuts, and AI fallback.",
+      "icon": "⚙️",
+      "mode": "view",
+      "component": "SettingsView",
+      "actions": []
+    }
+  ],
+  "background": {
+    "main": "dist/worker.js"
+  },
+  "tools": [
+    {
+      "id": "emoji_find",
+      "name": "Find emoji",
+      "description": "Return a small ranked list of emojis matching a natural-language description. Use when the user describes a feeling, situation, or object and you need to suggest emojis — e.g. 'something for being burnt out' or 'celebration'. Returns char, name, and :shortcode: for each match.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Natural-language description of desired emoji."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results, default 8, max 20."
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  ]
+}
