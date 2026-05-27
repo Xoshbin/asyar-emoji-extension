@@ -9,7 +9,7 @@ import {
 } from 'asyar-sdk/view';
 import manifest from '../manifest.json';
 import DefaultView from './views/DefaultView.svelte';
-import SettingsView from './views/SettingsView.svelte';
+import LearnedShortcodesView from './views/LearnedShortcodesView.svelte';
 
 class EmojiViewExtension implements Extension {
   private extensionManager?: IExtensionManager;
@@ -26,9 +26,9 @@ class EmojiViewExtension implements Extension {
       this.extensionManager?.navigateToView(`${extensionId}/DefaultView`);
       return { type: 'view', viewPath: `${extensionId}/DefaultView` };
     }
-    if (commandId === 'settings') {
-      this.extensionManager?.navigateToView(`${extensionId}/SettingsView`);
-      return { type: 'view', viewPath: `${extensionId}/SettingsView` };
+    if (commandId === 'manage-learned') {
+      this.extensionManager?.navigateToView(`${extensionId}/LearnedShortcodesView`);
+      return { type: 'view', viewPath: `${extensionId}/LearnedShortcodesView` };
     }
     return undefined;
   }
@@ -82,6 +82,6 @@ const viewName = new URLSearchParams(window.location.search).get('view');
 const target = document.getElementById('app');
 if (viewName === 'DefaultView' && target) {
   mount(DefaultView, { target, props: { context } });
-} else if (viewName === 'SettingsView' && target) {
-  mount(SettingsView, { target, props: { context } });
+} else if (viewName === 'LearnedShortcodesView' && target) {
+  mount(LearnedShortcodesView, { target, props: { context } });
 }

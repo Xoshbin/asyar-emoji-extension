@@ -13,6 +13,51 @@
     "clipboard:write",
     "snippets:contribute"
   ],
+  "preferences": [
+    {
+      "name": "aiToolEnabled",
+      "type": "checkbox",
+      "title": "Enable AI tool",
+      "description": "Lets the Asyar chat agent search the emoji catalog via the emoji_find tool.",
+      "default": true
+    },
+    {
+      "name": "showKaomoji",
+      "type": "checkbox",
+      "title": "Show kaomoji",
+      "description": "Include the ¯\\_(ツ)_/¯-style kaomoji section in the picker.",
+      "default": true
+    },
+    {
+      "name": "skinTone",
+      "type": "dropdown",
+      "title": "Default skin tone",
+      "description": "Applied automatically to skin-tone-capable emojis.",
+      "default": "0",
+      "data": [
+        { "value": "0", "title": "Default" },
+        { "value": "1", "title": "Light" },
+        { "value": "2", "title": "Medium-Light" },
+        { "value": "3", "title": "Medium" },
+        { "value": "4", "title": "Medium-Dark" },
+        { "value": "5", "title": "Dark" }
+      ]
+    },
+    {
+      "name": "shortcodesEnabled",
+      "type": "checkbox",
+      "title": "Expand :shortcodes: system-wide",
+      "description": "Master switch for the inline replacement. Turn off to silence shortcode expansion everywhere.",
+      "default": true
+    },
+    {
+      "name": "aiFallbackEnabled",
+      "type": "checkbox",
+      "title": "AI fallback for unknown :shortcodes:",
+      "description": "When a :xxx: pattern doesn't match a known emoji, ask AI to guess one. Results are cached for 24 hours.",
+      "default": true
+    }
+  ],
   "commands": [
     {
       "id": "open",
@@ -24,13 +69,20 @@
       "actions": []
     },
     {
-      "id": "settings",
-      "name": "Emoji Settings",
-      "description": "Configure emoji search, shortcuts, and AI fallback.",
-      "icon": "⚙️",
+      "id": "manage-learned",
+      "name": "Manage Learned Shortcodes",
+      "description": "Review, promote, or forget AI-resolved :shortcodes: from the last 24 hours.",
+      "icon": "🧠",
       "mode": "view",
-      "component": "SettingsView",
+      "component": "LearnedShortcodesView",
       "actions": []
+    },
+    {
+      "id": "clear-recents",
+      "name": "Clear Emoji Recents",
+      "description": "Wipe your recently used emojis and frequency counts.",
+      "icon": "🗑️",
+      "mode": "background"
     }
   ],
   "background": {

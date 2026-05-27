@@ -14,6 +14,7 @@
   import { applySkinTone, FITZPATRICK_MODIFIERS } from '../lib/skinTone';
   import { parseCompose } from '../lib/compose';
   import { STATE_KEYS } from '../stateKeys';
+  import { readEmojiPreferences } from '../lib/preferencesEffects';
 
   const EXTENSION_ID = 'org.asyar.emoji';
 
@@ -335,7 +336,7 @@
   async function doSetSkinTone(tone: 0 | 1 | 2 | 3 | 4 | 5) {
     skinTone = tone;
     showSkinToneStrip = false;
-    await context.request('emoji.setSkinTone', { tone });
+    await context.preferences.set('extension', 'skinTone', String(tone));
   }
 
   // -- Message handler (launcher → view)
@@ -427,8 +428,6 @@
         initRecents, unsubRecents,
         initFavs, unsubFavs,
         initFreq, unsubFreq,
-        initTone, unsubTone,
-        initKaomoji, unsubKaomoji,
       ] = await Promise.all([
         sp.get(STATE_KEYS.recents),
         sp.subscribe(STATE_KEYS.recents, (v) => {
@@ -447,22 +446,10 @@
             ? (v as Record<string, number>)
             : {};
         }),
-        sp.get(STATE_KEYS.skinTone),
-        sp.subscribe(STATE_KEYS.skinTone, (v) => {
-          if (!active) return;
-          const t = typeof v === 'number' ? v : 0;
-          skinTone = (Math.min(5, Math.max(0, t))) as 0 | 1 | 2 | 3 | 4 | 5;
-        }),
-        sp.get(STATE_KEYS.showKaomoji),
-        sp.subscribe(STATE_KEYS.showKaomoji, (v) => {
-          if (!active) return;
-          showKaomoji = v !== false;
-        }),
       ]);
 
       if (!active) {
         void unsubRecents(); void unsubFavs(); void unsubFreq();
-        void unsubTone(); void unsubKaomoji();
         return;
       }
 
@@ -471,12 +458,23 @@
       frequency = (initFreq && typeof initFreq === 'object' && !Array.isArray(initFreq))
         ? (initFreq as Record<string, number>)
         : {};
-      const rawTone = typeof initTone === 'number' ? initTone : 0;
-      skinTone = (Math.min(5, Math.max(0, rawTone))) as 0 | 1 | 2 | 3 | 4 | 5;
-      showKaomoji = initKaomoji !== false;
 
-      cleanup.push(unsubRecents, unsubFavs, unsubFreq, unsubTone, unsubKaomoji);
+      cleanup.push(unsubRecents, unsubFavs, unsubFreq);
     })();
+
+    const applyPrefs = () => {
+      const next = readEmojiPreferences(
+        context.preferences.values as Record<string, unknown>,
+      );
+      skinTone = next.skinTone;
+      showKaomoji = next.showKaomoji;
+    };
+    applyPrefs();
+    const unsubPrefs = context.onPreferencesChanged(() => {
+      if (!active) return;
+      applyPrefs();
+    });
+    cleanup.push(unsubPrefs);
 
     const actions = context.getService<IActionService>('actions');
     const viewActions: ExtensionAction[] = [

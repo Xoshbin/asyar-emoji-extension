@@ -22,7 +22,12 @@ import { rank } from './lib/fuzzy';
 import { pushRecent } from './lib/recents';
 import { toggleFavorite } from './lib/favorites';
 import { buildEmojiFindHandler } from './lib/tools/emojiFind';
-import { handleSetSetting, type SetSettingPayload, type SettingContext } from './lib/settings';
+import {
+  applyPreferenceTransition,
+  readEmojiPreferences,
+  type EmojiPreferences,
+  type PreferenceEffectsContext,
+} from './lib/preferencesEffects';
 import { STATE_KEYS } from './stateKeys';
 
 const extensionId =
@@ -43,14 +48,11 @@ const snippets = workerContext.getService<ISnippetsService>('snippets');
 const aiToolDefinition = manifest.tools[0] as ManifestTool;
 
 let frequencyCache: Map<string, number> = new Map();
+let lastPrefs: EmojiPreferences | null = null;
 
 const aiToolHandler = buildEmojiFindHandler(EMOJIS, () => frequencyCache);
 
-const settingsCtx: SettingContext = {
-  state: {
-    get: (k) => stateProxy.get(k),
-    set: (k, v) => stateProxy.set(k, v),
-  },
+const effectsCtx: PreferenceEffectsContext = {
   tools: {
     registerTool: (def, handler) => toolsService.registerTool(def as ManifestTool, handler),
     unregisterTool: (id) => toolsService.unregisterTool(id),
@@ -62,6 +64,18 @@ const settingsCtx: SettingContext = {
   shortcodeMap: SHORTCODE_MAP,
 };
 
+async function syncPreferences(): Promise<void> {
+  const next = readEmojiPreferences(
+    workerContext.preferences.values as Record<string, unknown>,
+  );
+  try {
+    await applyPreferenceTransition(effectsCtx, lastPrefs, next);
+  } catch (err: unknown) {
+    log.warn(`preference transition failed: ${describe(err)}`);
+  }
+  lastPrefs = next;
+}
+
 class EmojiExtension implements Extension {
   async initialize(_ctx: ExtensionContext): Promise<void> {}
 
@@ -71,33 +85,7 @@ class EmojiExtension implements Extension {
     const freq = (await stateProxy.get(STATE_KEYS.frequency)) as Record<string, number> | null;
     frequencyCache = new Map(Object.entries(freq ?? {}));
 
-    const aiToolEnabled =
-      ((await stateProxy.get(STATE_KEYS.aiToolEnabled)) as boolean | null) ?? true;
-    if (aiToolEnabled) {
-      try {
-        await toolsService.registerTool(aiToolDefinition, aiToolHandler);
-      } catch (err: unknown) {
-        log.warn(`registerTool(emoji_find) failed: ${describe(err)}`);
-      }
-    }
-
-    const shortcodesEnabled =
-      ((await stateProxy.get(STATE_KEYS.shortcodesEnabled)) as boolean | null) ?? true;
-    if (shortcodesEnabled) {
-      try {
-        await snippets.registerShortcodes(SHORTCODE_MAP);
-      } catch (err: unknown) {
-        log.warn(`registerShortcodes failed: ${describe(err)}`);
-      }
-    }
-
-    const aiFallbackEnabled =
-      ((await stateProxy.get(STATE_KEYS.aiFallbackEnabled)) as boolean | null) ?? true;
-    try {
-      await snippets.setInlineFallbackEnabled(aiFallbackEnabled);
-    } catch (err: unknown) {
-      log.warn(`setInlineFallbackEnabled failed: ${describe(err)}`);
-    }
+    await syncPreferences();
   }
 
   async deactivate(): Promise<void> {
@@ -106,7 +94,13 @@ class EmojiExtension implements Extension {
     log.info(`[${extensionId}] worker deactivated`);
   }
 
-  async executeCommand(_commandId: string, _args?: CommandExecuteArgs): Promise<unknown> {
+  async executeCommand(commandId: string, _args?: CommandExecuteArgs): Promise<unknown> {
+    if (commandId === 'clear-recents') {
+      await stateProxy.set(STATE_KEYS.recents, []);
+      await stateProxy.set(STATE_KEYS.frequency, {});
+      frequencyCache = new Map();
+      return;
+    }
     return undefined;
   }
 
@@ -123,13 +117,16 @@ extensionBridge.registerManifest(
 );
 extensionBridge.registerExtensionImplementation(extensionId, ext);
 
+workerContext.onPreferencesChanged(() => {
+  void syncPreferences();
+});
+
 workerContext.onRequest<{ query: string }, unknown>('emoji.search', async (p) => {
   const q = (p?.query ?? '').trim();
   if (q.length === 0) return { emojis: [], symbols: [], kaomoji: [] };
   const emojiHits = rank(EMOJIS, q, frequencyCache);
   const symbolHits = rank(SYMBOLS, q, frequencyCache);
-  const showKaomoji =
-    ((await stateProxy.get(STATE_KEYS.showKaomoji)) as boolean | null) ?? true;
+  const showKaomoji = lastPrefs?.showKaomoji ?? true;
   const kaomojiHits = showKaomoji ? rank(KAOMOJI, q, frequencyCache) : [];
   return { emojis: emojiHits, symbols: symbolHits, kaomoji: kaomojiHits };
 });
@@ -151,20 +148,6 @@ workerContext.onRequest<{ char: string }, void>('emoji.togglePin', async (p) => 
   const favorites =
     ((await stateProxy.get(STATE_KEYS.favorites)) as string[] | null) ?? [];
   await stateProxy.set(STATE_KEYS.favorites, toggleFavorite(favorites, p.char));
-});
-
-workerContext.onRequest<{ tone: 0 | 1 | 2 | 3 | 4 | 5 }, void>('emoji.setSkinTone', async (p) => {
-  await stateProxy.set(STATE_KEYS.skinTone, p.tone);
-});
-
-workerContext.onRequest<SetSettingPayload, void>('emoji.setSetting', async (p) => {
-  await handleSetSetting(settingsCtx, p);
-});
-
-workerContext.onRequest<void, void>('emoji.clearRecents', async () => {
-  await stateProxy.set(STATE_KEYS.recents, []);
-  await stateProxy.set(STATE_KEYS.frequency, {});
-  frequencyCache = new Map();
 });
 
 workerContext.onRequest<void, Array<[string, string]>>('emoji.listLearnedShortcodes', async () => {
