@@ -141,17 +141,17 @@
     border-radius: var(--radius-sm);
     padding: var(--space-2) var(--space-4);
     border: 1px solid var(--separator);
-    background: var(--bg-tertiary, var(--bg-primary));
+    background: var(--bg-tertiary);
     color: var(--text-primary);
     transition: background var(--transition-fast), border-color var(--transition-fast);
   }
   .btn-danger {
-    border-color: var(--accent-danger, var(--separator));
-    color: var(--accent-danger, var(--text-primary));
+    border-color: var(--accent-danger);
+    color: var(--accent-danger);
   }
   .btn-danger:hover {
-    background: var(--accent-danger, var(--bg-hover));
-    color: white;
+    background: var(--accent-danger);
+    color: var(--text-primary);
   }
   .btn-secondary:hover, .btn-ghost:hover { background: var(--bg-hover); }
   .btn-ghost { border-color: transparent; background: transparent; color: var(--text-secondary); }
@@ -188,7 +188,7 @@
   .learned-row:last-child { border-bottom: none; }
   .learned-shortcode { flex: 0 0 auto; }
   .learned-arrow { color: var(--text-tertiary); }
-  .learned-emoji { font-size: var(--font-size-lg, 18px); }
+  .learned-emoji { font-size: var(--font-size-lg); }
   .learned-actions {
     margin-left: auto;
     display: inline-flex;
@@ -201,9 +201,9 @@
   }
 
   code {
-    font-family: var(--font-mono, ui-monospace, monospace);
+    font-family: var(--font-mono);
     font-size: 0.92em;
-    background: var(--bg-tertiary, var(--bg-primary));
+    background: var(--bg-tertiary);
     border: 1px solid var(--separator);
     padding: 0 0.35em;
     border-radius: var(--radius-sm);
