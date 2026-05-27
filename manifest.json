@@ -1,7 +1,7 @@
 {
   "id": "org.asyar.emoji",
   "name": "Emoji",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "extension",
   "description": "Cross-platform emoji, symbol, and kaomoji picker with AI-aware search.",
   "author": "Asyar",
@@ -35,12 +35,30 @@
       "description": "Applied automatically to skin-tone-capable emojis.",
       "default": "0",
       "data": [
-        { "value": "0", "title": "Default" },
-        { "value": "1", "title": "Light" },
-        { "value": "2", "title": "Medium-Light" },
-        { "value": "3", "title": "Medium" },
-        { "value": "4", "title": "Medium-Dark" },
-        { "value": "5", "title": "Dark" }
+        {
+          "value": "0",
+          "title": "Default"
+        },
+        {
+          "value": "1",
+          "title": "Light"
+        },
+        {
+          "value": "2",
+          "title": "Medium-Light"
+        },
+        {
+          "value": "3",
+          "title": "Medium"
+        },
+        {
+          "value": "4",
+          "title": "Medium-Dark"
+        },
+        {
+          "value": "5",
+          "title": "Dark"
+        }
       ]
     },
     {
