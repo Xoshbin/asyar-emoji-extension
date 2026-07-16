@@ -3,7 +3,6 @@ import type { ShortcodeMap } from 'asyar-sdk/contracts';
 export interface EmojiPreferences {
   aiToolEnabled: boolean;
   shortcodesEnabled: boolean;
-  aiFallbackEnabled: boolean;
   showKaomoji: boolean;
   skinTone: 0 | 1 | 2 | 3 | 4 | 5;
 }
@@ -19,7 +18,6 @@ export interface PreferenceEffectsContext {
   snippets: {
     registerShortcodes: (map: ShortcodeMap) => Promise<void>;
     unregisterShortcodes: () => Promise<void>;
-    setInlineFallbackEnabled: (enabled: boolean) => Promise<void>;
   };
   log: {
     info: (message: string) => void;
@@ -48,7 +46,6 @@ export function readEmojiPreferences(
   return {
     aiToolEnabled: values.aiToolEnabled !== false,
     shortcodesEnabled: values.shortcodesEnabled !== false,
-    aiFallbackEnabled: values.aiFallbackEnabled !== false,
     showKaomoji: values.showKaomoji !== false,
     skinTone: clampTone(skinToneRaw),
   };
@@ -72,9 +69,6 @@ export async function applyPreferenceTransition(
     } else {
       await ctx.snippets.unregisterShortcodes();
     }
-  }
-  if (prev === null || prev.aiFallbackEnabled !== next.aiFallbackEnabled) {
-    await ctx.snippets.setInlineFallbackEnabled(next.aiFallbackEnabled);
   }
   // skinTone, showKaomoji: pure-state, no side effect.
 }

@@ -67,13 +67,6 @@
       "title": "Expand :shortcodes: system-wide",
       "description": "Master switch for the inline replacement. Turn off to silence shortcode expansion everywhere.",
       "default": true
-    },
-    {
-      "name": "aiFallbackEnabled",
-      "type": "checkbox",
-      "title": "AI fallback for unknown :shortcodes:",
-      "description": "When a :xxx: pattern doesn't match a known emoji, ask AI to guess one. Results are cached for 24 hours.",
-      "default": true
     }
   ],
   "commands": [

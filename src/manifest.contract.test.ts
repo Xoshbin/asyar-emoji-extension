@@ -16,7 +16,6 @@ const PERMISSION_FOR_API: Record<string, string> = {
   promoteLearnedShortcode: 'snippets:contribute',
   forgetLearnedShortcode: 'snippets:contribute',
   clearLearnedShortcodes: 'snippets:contribute',
-  setInlineFallbackEnabled: 'snippets:contribute',
 };
 
 describe('manifest permissions contract', () => {

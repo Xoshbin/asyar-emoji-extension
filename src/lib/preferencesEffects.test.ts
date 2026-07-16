@@ -11,7 +11,6 @@ function buildCtx(): PreferenceEffectsContext & {
   snippets: {
     registerShortcodes: ReturnType<typeof vi.fn>;
     unregisterShortcodes: ReturnType<typeof vi.fn>;
-    setInlineFallbackEnabled: ReturnType<typeof vi.fn>;
   };
 } {
   return {
@@ -22,7 +21,6 @@ function buildCtx(): PreferenceEffectsContext & {
     snippets: {
       registerShortcodes: vi.fn(async () => {}),
       unregisterShortcodes: vi.fn(async () => {}),
-      setInlineFallbackEnabled: vi.fn(async () => {}),
     },
     aiToolDefinition: { id: 'emoji_find', name: 'Find emoji', description: '', parameters: {} },
     aiToolHandler: vi.fn(async () => []),
@@ -34,7 +32,6 @@ function buildCtx(): PreferenceEffectsContext & {
 const DEFAULTS: EmojiPreferences = {
   aiToolEnabled: true,
   shortcodesEnabled: true,
-  aiFallbackEnabled: true,
   showKaomoji: true,
   skinTone: 0,
 };
@@ -48,12 +45,10 @@ describe('readEmojiPreferences', () => {
     const p = readEmojiPreferences({
       aiToolEnabled: false,
       shortcodesEnabled: false,
-      aiFallbackEnabled: false,
       showKaomoji: false,
     });
     expect(p.aiToolEnabled).toBe(false);
     expect(p.shortcodesEnabled).toBe(false);
-    expect(p.aiFallbackEnabled).toBe(false);
     expect(p.showKaomoji).toBe(false);
   });
 
@@ -81,21 +76,18 @@ describe('applyPreferenceTransition', () => {
     await applyPreferenceTransition(ctx, null, DEFAULTS);
     expect(ctx.tools.registerTool).toHaveBeenCalledWith(ctx.aiToolDefinition, ctx.aiToolHandler);
     expect(ctx.snippets.registerShortcodes).toHaveBeenCalledWith(ctx.shortcodeMap);
-    expect(ctx.snippets.setInlineFallbackEnabled).toHaveBeenCalledWith(true);
   });
 
-  it('on first apply with all flags off, unregisters tool/snippets and sets fallback false', async () => {
+  it('on first apply with all flags off, unregisters tool/snippets', async () => {
     const off: EmojiPreferences = {
       aiToolEnabled: false,
       shortcodesEnabled: false,
-      aiFallbackEnabled: false,
       showKaomoji: true,
       skinTone: 0,
     };
     await applyPreferenceTransition(ctx, null, off);
     expect(ctx.tools.unregisterTool).toHaveBeenCalledWith('emoji_find');
     expect(ctx.snippets.unregisterShortcodes).toHaveBeenCalled();
-    expect(ctx.snippets.setInlineFallbackEnabled).toHaveBeenCalledWith(false);
     expect(ctx.tools.registerTool).not.toHaveBeenCalled();
     expect(ctx.snippets.registerShortcodes).not.toHaveBeenCalled();
   });
@@ -106,7 +98,6 @@ describe('applyPreferenceTransition', () => {
     expect(ctx.tools.unregisterTool).not.toHaveBeenCalled();
     expect(ctx.snippets.registerShortcodes).not.toHaveBeenCalled();
     expect(ctx.snippets.unregisterShortcodes).not.toHaveBeenCalled();
-    expect(ctx.snippets.setInlineFallbackEnabled).not.toHaveBeenCalled();
   });
 
   it('toggling aiToolEnabled off after on calls unregisterTool only', async () => {
@@ -121,11 +112,6 @@ describe('applyPreferenceTransition', () => {
     expect(ctx.snippets.registerShortcodes).not.toHaveBeenCalled();
   });
 
-  it('toggling aiFallbackEnabled propagates the new value', async () => {
-    await applyPreferenceTransition(ctx, DEFAULTS, { ...DEFAULTS, aiFallbackEnabled: false });
-    expect(ctx.snippets.setInlineFallbackEnabled).toHaveBeenCalledWith(false);
-  });
-
   it('skinTone / showKaomoji changes trigger zero side effects', async () => {
     await applyPreferenceTransition(
       ctx,
@@ -136,6 +122,5 @@ describe('applyPreferenceTransition', () => {
     expect(ctx.tools.unregisterTool).not.toHaveBeenCalled();
     expect(ctx.snippets.registerShortcodes).not.toHaveBeenCalled();
     expect(ctx.snippets.unregisterShortcodes).not.toHaveBeenCalled();
-    expect(ctx.snippets.setInlineFallbackEnabled).not.toHaveBeenCalled();
   });
 });
