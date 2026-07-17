@@ -80,15 +80,6 @@
       "actions": []
     },
     {
-      "id": "manage-learned",
-      "name": "Manage Learned Shortcodes",
-      "description": "Review, promote, or forget AI-resolved :shortcodes: from the last 24 hours.",
-      "icon": "🧠",
-      "mode": "view",
-      "component": "LearnedShortcodesView",
-      "actions": []
-    },
-    {
       "id": "clear-recents",
       "name": "Clear Emoji Recents",
       "description": "Wipe your recently used emojis and frequency counts.",

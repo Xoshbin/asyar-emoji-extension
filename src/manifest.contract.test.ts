@@ -12,10 +12,6 @@ const PERMISSION_FOR_API: Record<string, string> = {
   pasteItem: 'clipboard:write',
   registerShortcodes: 'snippets:contribute',
   unregisterShortcodes: 'snippets:contribute',
-  listLearnedShortcodes: 'snippets:contribute',
-  promoteLearnedShortcode: 'snippets:contribute',
-  forgetLearnedShortcode: 'snippets:contribute',
-  clearLearnedShortcodes: 'snippets:contribute',
 };
 
 describe('manifest permissions contract', () => {

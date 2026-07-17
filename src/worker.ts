@@ -150,22 +150,6 @@ workerContext.onRequest<{ char: string }, void>('emoji.togglePin', async (p) => 
   await stateProxy.set(STATE_KEYS.favorites, toggleFavorite(favorites, p.char));
 });
 
-workerContext.onRequest<void, Array<[string, string]>>('emoji.listLearnedShortcodes', async () => {
-  return snippets.listLearnedShortcodes();
-});
-
-workerContext.onRequest<{ shortcode: string }, void>('emoji.promoteLearned', async (p) => {
-  await snippets.promoteLearnedShortcode(p.shortcode);
-});
-
-workerContext.onRequest<{ shortcode: string }, void>('emoji.forgetLearned', async (p) => {
-  await snippets.forgetLearnedShortcode(p.shortcode);
-});
-
-workerContext.onRequest<void, void>('emoji.clearLearned', async () => {
-  await snippets.clearLearnedShortcodes();
-});
-
 void (async () => {
   try {
     await ext.activate();
