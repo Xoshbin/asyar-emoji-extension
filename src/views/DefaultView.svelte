@@ -558,9 +558,6 @@
     ];
 
     for (const a of viewActions) actions.registerAction(a);
-    cleanup.push(() => {
-      for (const a of viewActions) actions.unregisterAction(a.id);
-    });
 
     return () => {
       active = false;
