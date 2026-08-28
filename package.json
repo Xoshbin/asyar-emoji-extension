@@ -1,6 +1,6 @@
 {
   "name": "org.asyar.emoji",
-  "version": "1.0.0",
+  "version": "1.1.4",
   "description": "Cross-platform emoji, symbol, and kaomoji picker with AI-aware search.",
   "type": "module",
   "scripts": {
