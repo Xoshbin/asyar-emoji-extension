@@ -13,6 +13,7 @@
   import type { EmojiRecord, SymbolRecord, KaomojiRecord, EmojiCategory } from '../lib/types';
   import { applySkinTone, FITZPATRICK_MODIFIERS } from '../lib/skinTone';
   import { parseCompose } from '../lib/compose';
+  import { moveVerticalSelection } from '../lib/gridNavigation';
   import { STATE_KEYS } from '../stateKeys';
   import { readEmojiPreferences } from '../lib/preferencesEffects';
 
@@ -364,10 +365,20 @@
         selected = Math.max(0, selected - 1);
         ensureVisible();
       } else if (key === 'ArrowDown') {
-        selected = Math.min(flatItems.length - 1, selected + columnsPerRow);
+        selected = moveVerticalSelection(
+          sections.map(section => section.items.length),
+          selected,
+          columnsPerRow,
+          'down',
+        );
         ensureVisible();
       } else if (key === 'ArrowUp') {
-        selected = Math.max(0, selected - columnsPerRow);
+        selected = moveVerticalSelection(
+          sections.map(section => section.items.length),
+          selected,
+          columnsPerRow,
+          'up',
+        );
         ensureVisible();
       } else if (key === 'Enter') {
         void doInsert();
