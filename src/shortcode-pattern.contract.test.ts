@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SHORTCODE_PATTERN } from 'asyar-sdk/contracts/snippets';
+import { SHORTCODE_PATTERN } from 'asyar-sdk/contracts';
 
 describe('shortcode pattern parity', () => {
   it('SDK SHORTCODE_PATTERN regex string matches the Rust regex literal in snippets.rs', () => {
