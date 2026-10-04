@@ -1,7 +1,4 @@
-import {
-  ExtensionContext as WorkerExtensionContext,
-  extensionBridge,
-} from 'asyar-sdk/worker';
+import { ExtensionContext as WorkerExtensionContext, extensionBridge } from 'asyar-sdk/worker';
 import type {
   Extension,
   ExtensionContext,
@@ -30,12 +27,7 @@ import {
 } from './lib/preferencesEffects';
 import { STATE_KEYS } from './stateKeys';
 
-const extensionId =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === 'asyar-extension.localhost'
-    ? window.location.pathname.split('/').filter(Boolean)[0] ||
-      'org.asyar.emoji'
-    : window.location.hostname || 'org.asyar.emoji';
+const extensionId = manifest.id;
 
 const workerContext = new WorkerExtensionContext();
 workerContext.setExtensionId(extensionId);
@@ -65,9 +57,7 @@ const effectsCtx: PreferenceEffectsContext = {
 };
 
 async function syncPreferences(): Promise<void> {
-  const next = readEmojiPreferences(
-    workerContext.preferences.values as Record<string, unknown>,
-  );
+  const next = readEmojiPreferences(workerContext.preferences.values as Record<string, unknown>);
   try {
     await applyPreferenceTransition(effectsCtx, lastPrefs, next);
   } catch (err: unknown) {
@@ -134,8 +124,7 @@ workerContext.onRequest<{ query: string }, unknown>('emoji.search', async (p) =>
 // Clipboard ops happen in the view (SDK keeps clipboard view-only). The worker
 // only tracks usage to feed the ranker's frequency tiebreak + Recents section.
 workerContext.onRequest<{ char: string }, void>('emoji.recordUsage', async (p) => {
-  const recents =
-    ((await stateProxy.get(STATE_KEYS.recents)) as string[] | null) ?? [];
+  const recents = ((await stateProxy.get(STATE_KEYS.recents)) as string[] | null) ?? [];
   await stateProxy.set(STATE_KEYS.recents, pushRecent(recents, p.char));
   const freq =
     ((await stateProxy.get(STATE_KEYS.frequency)) as Record<string, number> | null) ?? {};
@@ -145,8 +134,7 @@ workerContext.onRequest<{ char: string }, void>('emoji.recordUsage', async (p) =
 });
 
 workerContext.onRequest<{ char: string }, void>('emoji.togglePin', async (p) => {
-  const favorites =
-    ((await stateProxy.get(STATE_KEYS.favorites)) as string[] | null) ?? [];
+  const favorites = ((await stateProxy.get(STATE_KEYS.favorites)) as string[] | null) ?? [];
   await stateProxy.set(STATE_KEYS.favorites, toggleFavorite(favorites, p.char));
 });
 
@@ -157,10 +145,6 @@ void (async () => {
     log.error(`[${extensionId}] worker activate failed: ${describe(err)}`);
   }
 })();
-
-window.addEventListener('beforeunload', () => {
-  void ext.deactivate();
-});
 
 function describe(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
