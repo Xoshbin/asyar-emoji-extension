@@ -1,6 +1,6 @@
 {
   "name": "org.asyar.emoji",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Cross-platform emoji, symbol, and kaomoji picker with AI-aware search.",
   "type": "module",
   "scripts": {
@@ -20,7 +20,7 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@types/rollup-plugin-css-only": "^3.1.2",
     "@vitest/coverage-v8": "^2.1.0",
-    "asyar-sdk": "workspace:*",
+    "asyar-sdk": "^4.15.0",
     "emojilib": "^4.0.3",
     "rollup-plugin-css-only": "^4.5.2",
     "typescript": "^5.0.0",
