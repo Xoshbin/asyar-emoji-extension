@@ -74,7 +74,6 @@
       "id": "open",
       "name": "Emoji & Symbols",
       "description": "Pick and insert an emoji, symbol, or kaomoji.",
-      "icon": "😀",
       "mode": "view",
       "component": "DefaultView",
       "searchBarAccessory": {
