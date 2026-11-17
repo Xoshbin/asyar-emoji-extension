@@ -5,14 +5,16 @@
     ExtensionStateProxy,
     IActionService,
     ExtensionAction,
+    IExtensionManager,
   } from 'asyar-sdk/view';
-  import { ActionContext } from 'asyar-sdk/view';
+  import { ActionContext, searchBarAccessory } from 'asyar-sdk/view';
   import { EMOJIS } from '../data/emojis';
   import { SYMBOLS } from '../data/symbols';
   import { KAOMOJI } from '../data/kaomoji';
   import type { EmojiRecord, SymbolRecord, KaomojiRecord, EmojiCategory } from '../lib/types';
-  import { applySkinTone, FITZPATRICK_MODIFIERS } from '../lib/skinTone';
+  import { applySkinTone } from '../lib/skinTone';
   import { parseCompose } from '../lib/compose';
+  import { formatCodepointsUPlus } from '../lib/unicode';
   import { moveVerticalSelection } from '../lib/gridNavigation';
   import { STATE_KEYS } from '../stateKeys';
   import { readEmojiPreferences } from '../lib/preferencesEffects';
@@ -23,6 +25,7 @@
   let { context }: Props = $props();
 
   const stateProxy = $derived(context.getService<ExtensionStateProxy>('state'));
+  const extensionManager = $derived(context.getService<IExtensionManager>('extensions'));
 
   // State
   let query = $state('');
@@ -35,7 +38,7 @@
   let frequency = $state<Record<string, number>>({});
   let skinTone = $state<0 | 1 | 2 | 3 | 4 | 5>(0);
   let showKaomoji = $state(true);
-  let showSkinToneStrip = $state(false);
+  let categoryFilter = $state('all');
   let gridContainer: HTMLDivElement | undefined = $state();
   let columnsPerRow = $state(1);
 
@@ -59,11 +62,11 @@
 
   // --- Category sections for empty-query browse view ---
   const CATEGORY_SECTIONS: Array<{ key: EmojiCategory; label: string }> = [
-    { key: 'smileys-people', label: 'Smileys & People' },
-    { key: 'animals-nature', label: 'Animals & Nature' },
-    { key: 'food-drink', label: 'Food & Drink' },
+    { key: 'smileys-people', label: 'Smileys & people' },
+    { key: 'animals-nature', label: 'Animals & nature' },
+    { key: 'food-drink', label: 'Food & drink' },
     { key: 'activity', label: 'Activity' },
-    { key: 'travel-places', label: 'Travel & Places' },
+    { key: 'travel-places', label: 'Travel & places' },
     { key: 'objects', label: 'Objects' },
     { key: 'symbols', label: 'Symbols' },
     { key: 'flags', label: 'Flags' },
@@ -112,8 +115,9 @@
 
     // Browse mode — structured sections
     const result: Section[] = [];
+    const filter = categoryFilter;
 
-    if (favorites.length > 0) {
+    if ((filter === 'all' || filter === 'favorites') && favorites.length > 0) {
       const items: GridItem[] = favorites
         .map(char => {
           const e = (EMOJIS as EmojiRecord[]).find(r => r.char === char);
@@ -123,7 +127,7 @@
       if (items.length > 0) result.push({ label: 'Favorites', items });
     }
 
-    if (Object.keys(frequency).length > 0) {
+    if ((filter === 'all' || filter === 'frequently-used') && Object.keys(frequency).length > 0) {
       const sorted = Object.entries(frequency)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 16)
@@ -132,10 +136,10 @@
           return e ? { kind: 'emoji' as const, record: e } : null;
         })
         .filter((x): x is GridItem => x !== null);
-      if (sorted.length > 0) result.push({ label: 'Frequently Used', items: sorted });
+      if (sorted.length > 0) result.push({ label: 'Frequently used', items: sorted });
     }
 
-    if (recents.length > 0) {
+    if ((filter === 'all' || filter === 'frequently-used') && recents.length > 0) {
       const items: GridItem[] = recents
         .slice(0, 16)
         .map(char => {
@@ -143,10 +147,11 @@
           return e ? { kind: 'emoji' as const, record: e } : null;
         })
         .filter((x): x is GridItem => x !== null);
-      if (items.length > 0) result.push({ label: 'Recent', items });
+      if (items.length > 0) result.push({ label: 'Recently used', items });
     }
 
     for (const sec of CATEGORY_SECTIONS) {
+      if (filter !== 'all' && filter !== sec.key) continue;
       if (sec.key === 'symbols') {
         const items: GridItem[] = (SYMBOLS as SymbolRecord[]).map(r => ({ kind: 'symbol' as const, record: r }));
         result.push({ label: 'Symbols', items });
@@ -158,7 +163,7 @@
       }
     }
 
-    if (showKaomoji) {
+    if (showKaomoji && (filter === 'all' || filter === 'kaomoji')) {
       const items: GridItem[] = (KAOMOJI as KaomojiRecord[]).map(r => ({ kind: 'kaomoji' as const, record: r }));
       result.push({ label: 'Kaomoji', items });
     }
@@ -214,6 +219,11 @@
     return null;
   }
 
+  function selectedCodepointString(): string | null {
+    const cp = selectedCodepoints();
+    return cp ? formatCodepointsUPlus(cp) : null;
+  }
+
   function selectedCodepoints(): number[] | null {
     const rec = selectedRecord();
     if (!rec) return null;
@@ -226,25 +236,12 @@
     return rec.htmlEntity;
   }
 
-  function selectedIsSkinToneBase(): boolean {
-    const item = selectedItem;
-    if (!item || item.kind !== 'emoji') return false;
-    return !!item.record.skinToneBase;
-  }
-
   function selectedIsFavorite(): boolean {
     const char = selectedChar();
     if (!char) return false;
     const item = selectedItem;
     if (!item || item.kind !== 'emoji') return false;
     return favorites.includes(item.record.char);
-  }
-
-  // -- Skin tone swatches
-  const SKIN_TONE_LABELS = ['Default', 'Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark'];
-
-  function renderWithTone(char: string, tone: 0 | 1 | 2 | 3 | 4 | 5): string {
-    return applySkinTone(char, tone);
   }
 
   // Render a grid item char (with skin tone applied for emojis)
@@ -313,8 +310,7 @@
   async function doCopyCodepoints() {
     const cp = selectedCodepoints();
     if (!cp) return;
-    const formatted = cp.map((c) => `U+${c.toString(16).toUpperCase().padStart(4, '0')}`).join(' ');
-    await clipboard.writeToClipboard(textEntry(formatted));
+    await clipboard.writeToClipboard(textEntry(formatCodepointsUPlus(cp)));
   }
 
   async function doCopyHtmlEntity() {
@@ -329,17 +325,6 @@
     await context.request('emoji.togglePin', { char: item.record.char });
   }
 
-  function doOpenSkinToneStrip() {
-    if (!selectedIsSkinToneBase()) return;
-    showSkinToneStrip = !showSkinToneStrip;
-  }
-
-  async function doSetSkinTone(tone: 0 | 1 | 2 | 3 | 4 | 5) {
-    skinTone = tone;
-    showSkinToneStrip = false;
-    await context.preferences.set('extension', 'skinTone', String(tone));
-  }
-
   // -- Message handler (launcher → view)
   function handleMessage(event: MessageEvent) {
     if (event.source !== window.parent) return;
@@ -349,7 +334,6 @@
     if (data.type === 'asyar:view:search') {
       query = data.payload?.query ?? '';
       selected = 0;
-      showSkinToneStrip = false;
     }
 
     if (data.type === 'asyar:view:keydown') {
@@ -392,8 +376,6 @@
         void doCopy();
       } else if (meta && key === 'p') {
         void doTogglePin();
-      } else if (meta && key === 't') {
-        doOpenSkinToneStrip();
       }
     }
   }
@@ -413,6 +395,14 @@
     }).catch(() => {
       searchResults = { emojis: [], symbols: [], kaomoji: [] };
     });
+  });
+
+  // -- Bottom-bar subtitle: show the selected emoji's name beside "Emoji"
+  $effect(() => {
+    const mgr = extensionManager;
+    if (!mgr) return;
+    const name = selectedItem ? itemName(selectedItem) : null;
+    void mgr.setActiveViewSubtitle(name);
   });
 
   // -- Lifecycle
@@ -487,22 +477,28 @@
     });
     cleanup.push(unsubPrefs);
 
+    const offAccessory = searchBarAccessory.onChange((value: string) => {
+      categoryFilter = value || 'all';
+      selected = 0;
+    });
+    cleanup.push(offAccessory);
+
     const actions = context.getService<IActionService>('actions');
     const viewActions: ExtensionAction[] = [
       {
         id: `${EXTENSION_ID}:insert`,
-        title: 'Insert at Cursor',
+        title: 'Insert at cursor',
         description: 'Insert the selected emoji or symbol at the cursor position.',
         icon: '⏎',
         category: 'Primary',
         extensionId: EXTENSION_ID,
         context: ActionContext.EXTENSION_VIEW,
-        shortcut: '↵',
+        shortcut: '⏎',
         execute: doInsert,
       },
       {
         id: `${EXTENSION_ID}:copy`,
-        title: 'Copy Emoji',
+        title: 'Copy emoji',
         description: 'Copy the selected emoji or symbol to the clipboard.',
         icon: '📋',
         category: 'Share',
@@ -513,7 +509,7 @@
       },
       {
         id: `${EXTENSION_ID}:copy-shortcode`,
-        title: 'Copy Shortcode',
+        title: 'Copy shortcode',
         description: 'Copy the :shortcode: for the selected emoji.',
         icon: '🔤',
         category: 'Share',
@@ -524,7 +520,7 @@
       },
       {
         id: `${EXTENSION_ID}:copy-codepoints`,
-        title: 'Copy U+ Codepoints',
+        title: 'Copy U+ codepoints',
         description: 'Copy the Unicode codepoint(s) for the selected character.',
         icon: '🔣',
         category: 'Share',
@@ -535,7 +531,7 @@
       },
       {
         id: `${EXTENSION_ID}:copy-html-entity`,
-        title: 'Copy HTML Entity',
+        title: 'Copy HTML entity',
         description: 'Copy the HTML entity for the selected character.',
         icon: '🏷️',
         category: 'Share',
@@ -546,7 +542,7 @@
       },
       {
         id: `${EXTENSION_ID}:toggle-pin`,
-        title: 'Pin / Unpin',
+        title: 'Pin / unpin',
         description: 'Pin or unpin the selected emoji to your Favorites.',
         icon: '📌',
         category: 'Edit',
@@ -554,17 +550,6 @@
         context: ActionContext.EXTENSION_VIEW,
         shortcut: '⌘P',
         execute: doTogglePin,
-      },
-      {
-        id: `${EXTENSION_ID}:skin-tone`,
-        title: 'Set Default Skin Tone',
-        description: 'Open the skin-tone picker for the selected emoji.',
-        icon: '🖐️',
-        category: 'Edit',
-        extensionId: EXTENSION_ID,
-        context: ActionContext.EXTENSION_VIEW,
-        shortcut: '⌘T',
-        execute: () => { doOpenSkinToneStrip(); },
       },
     ];
 
@@ -588,33 +573,11 @@
     </div>
   {/if}
 
-  <!-- Skin tone strip -->
-  {#if showSkinToneStrip}
-    <div class="skin-tone-strip" role="toolbar" aria-label="Skin tone">
-      {#each FITZPATRICK_MODIFIERS as _mod, i}
-        {@const tone = i as 0 | 1 | 2 | 3 | 4 | 5}
-        {@const previewChar = selectedItem?.kind === 'emoji' ? renderWithTone(selectedItem.record.char, tone) : '👋'}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_interactive_supports_focus -->
-        <div
-          class="tone-swatch"
-          class:tone-active={skinTone === tone}
-          role="button"
-          title={SKIN_TONE_LABELS[i]}
-          onclick={() => doSetSkinTone(tone)}
-        >
-          {previewChar}
-        </div>
-      {/each}
-    </div>
-  {/if}
-
   <!-- Sections -->
   <div class="sections-scroll custom-scrollbar" bind:this={gridContainer}>
     {#if sections.length === 0}
       <div class="empty-state">
-        <span class="empty-icon">🔍</span>
-        <span>No results for "{query}"</span>
+        <span>No emoji matching "{query}"</span>
       </div>
     {:else}
       {#each sections as section, sectionIdx (section.label)}
@@ -637,7 +600,12 @@
                 onclick={() => { selected = fi; void doInsert(); }}
                 onmouseenter={() => { selected = fi; }}
               >
-                <span class="cell-char">{itemChar(item)}</span>
+                <span
+                  class="cell-char"
+                  class:cell-char--kaomoji={item.kind === 'kaomoji'}
+                >
+                  {itemChar(item)}
+                </span>
               </div>
             {/each}
           </div>
@@ -645,6 +613,7 @@
       {/each}
     {/if}
   </div>
+
 </div>
 
 <style>
@@ -692,39 +661,6 @@
     margin-left: auto;
   }
 
-  /* Skin tone strip */
-  .skin-tone-strip {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-4);
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--separator);
-    flex-shrink: 0;
-  }
-
-  .tone-swatch {
-    font-size: var(--font-size-xl);
-    width: var(--space-9);
-    height: var(--space-9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    cursor: default;
-    transition: background var(--transition-fast);
-    border: 2px solid transparent;
-  }
-
-  .tone-swatch:hover {
-    background: var(--bg-hover);
-  }
-
-  .tone-swatch.tone-active {
-    border-color: var(--accent-primary);
-    background: var(--bg-selected);
-  }
-
   /* Scrollable section area */
   .sections-scroll {
     flex: 1;
@@ -734,56 +670,70 @@
 
   /* Section */
   .section {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
   }
 
   .section-header {
-    padding: var(--space-3) var(--space-5) var(--space-2);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-tertiary);
     position: sticky;
     top: 0;
+    z-index: var(--z-base);
+    padding: var(--space-2) var(--space-4);
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-tertiary);
     background: var(--bg-primary);
-    z-index: 1;
+    backdrop-filter: blur(16px);
   }
 
-  /* Emoji grid */
+  /* Emoji grid — Raycast feel: rounded card tiles with background & generous gaps */
   .emoji-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
-    gap: var(--space-1);
+    grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr));
+    gap: var(--space-3);
     padding: 0 var(--space-4);
   }
 
-  /* Grid cell */
+  /* Grid cell: rounded card tile with background */
   .grid-cell {
     aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xl);
     cursor: default;
-    transition: background var(--transition-fast);
-    border: 2px solid transparent;
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow-xs);
+    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
   }
 
   .grid-cell:hover {
     background: var(--bg-hover);
+    border-color: color-mix(in srgb, var(--accent-primary) 30%, var(--border-color));
   }
 
   .grid-cell.grid-cell-selected {
     background: var(--bg-selected);
     border-color: var(--accent-primary);
-    box-shadow: var(--shadow-focus);
+    box-shadow: 0 0 0 1px var(--accent-primary), var(--shadow-sm);
   }
 
   .cell-char {
-    font-size: var(--font-size-xl);
+    font-size: 2.125rem;
     line-height: 1;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+  }
+
+  .cell-char--kaomoji {
+    font-size: var(--font-size-base);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    filter: none;
   }
 
   /* Empty state */
@@ -794,14 +744,9 @@
     justify-content: center;
     height: 100%;
     gap: var(--space-3);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: var(--font-size-sm);
     padding: var(--space-10) var(--space-5);
     text-align: center;
-  }
-
-  .empty-icon {
-    font-size: var(--font-size-display);
-    opacity: 0.5;
   }
 </style>

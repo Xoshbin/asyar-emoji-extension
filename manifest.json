@@ -77,6 +77,24 @@
       "icon": "😀",
       "mode": "view",
       "component": "DefaultView",
+      "searchBarAccessory": {
+        "type": "dropdown",
+        "default": "all",
+        "options": [
+          { "value": "all", "title": "All Categories" },
+          { "value": "frequently-used", "title": "Frequently Used" },
+          { "value": "favorites", "title": "Favorites" },
+          { "value": "smileys-people", "title": "Smileys & People" },
+          { "value": "animals-nature", "title": "Animals & Nature" },
+          { "value": "food-drink", "title": "Food & Drink" },
+          { "value": "activity", "title": "Activity" },
+          { "value": "travel-places", "title": "Travel & Places" },
+          { "value": "objects", "title": "Objects" },
+          { "value": "symbols", "title": "Symbols" },
+          { "value": "flags", "title": "Flags" },
+          { "value": "kaomoji", "title": "Kaomoji" }
+        ]
+      },
       "actions": []
     },
     {
