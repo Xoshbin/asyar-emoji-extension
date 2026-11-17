@@ -5,9 +5,9 @@
   "type": "extension",
   "description": "Cross-platform emoji, symbol, and kaomoji picker with AI-aware search.",
   "author": "Asyar",
-  "icon": "😀",
+  "icon": "assets/icon.png",
   "searchable": true,
-  "asyarSdk": "^4.15.0",
+  "asyarSdk": "^4.17.0",
   "permissions": [
     "tools:register",
     "clipboard:write",
@@ -81,18 +81,54 @@
         "type": "dropdown",
         "default": "all",
         "options": [
-          { "value": "all", "title": "All Categories" },
-          { "value": "frequently-used", "title": "Frequently Used" },
-          { "value": "favorites", "title": "Favorites" },
-          { "value": "smileys-people", "title": "Smileys & People" },
-          { "value": "animals-nature", "title": "Animals & Nature" },
-          { "value": "food-drink", "title": "Food & Drink" },
-          { "value": "activity", "title": "Activity" },
-          { "value": "travel-places", "title": "Travel & Places" },
-          { "value": "objects", "title": "Objects" },
-          { "value": "symbols", "title": "Symbols" },
-          { "value": "flags", "title": "Flags" },
-          { "value": "kaomoji", "title": "Kaomoji" }
+          {
+            "value": "all",
+            "title": "All Categories"
+          },
+          {
+            "value": "frequently-used",
+            "title": "Frequently Used"
+          },
+          {
+            "value": "favorites",
+            "title": "Favorites"
+          },
+          {
+            "value": "smileys-people",
+            "title": "Smileys & People"
+          },
+          {
+            "value": "animals-nature",
+            "title": "Animals & Nature"
+          },
+          {
+            "value": "food-drink",
+            "title": "Food & Drink"
+          },
+          {
+            "value": "activity",
+            "title": "Activity"
+          },
+          {
+            "value": "travel-places",
+            "title": "Travel & Places"
+          },
+          {
+            "value": "objects",
+            "title": "Objects"
+          },
+          {
+            "value": "symbols",
+            "title": "Symbols"
+          },
+          {
+            "value": "flags",
+            "title": "Flags"
+          },
+          {
+            "value": "kaomoji",
+            "title": "Kaomoji"
+          }
         ]
       },
       "actions": []
